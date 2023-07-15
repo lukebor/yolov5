@@ -28,15 +28,21 @@ class Albumentations:
             import albumentations as A
             check_version(A.__version__, '1.0.3', hard=True)  # version requirement
 
-            T = [
-                A.RandomResizedCrop(height=size, width=size, scale=(0.8, 1.0), ratio=(0.9, 1.11), p=0.0),
-                A.Blur(p=0.01),
-                A.MedianBlur(p=0.01),
-                A.ToGray(p=0.01),
-                A.CLAHE(p=0.01),
-                A.RandomBrightnessContrast(p=0.0),
-                A.RandomGamma(p=0.0),
-                A.ImageCompression(quality_lower=75, p=0.0)]  # transforms
+            T = [  #A.GaussNoise(p=0.2),
+                  #A.MultiplicativeNoise(always_apply=False, p=0.1, multiplier=(0.6, 4), per_channel=False, elementwise=False),
+                  #A.OneOf([
+                  #A.Blur(blur_limit=[3,5], always_apply=False, p=0.5),
+                  #A.MedianBlur(blur_limit=[3,5],p=0.5),
+                  A.MotionBlur(blur_limit=[3,5],p=0.15),
+                  A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, brightness_by_max=False, always_apply=False, p=0.25),
+                  A.RandomRotate90(p=0.25),
+                  A.RandomGamma(p=0.15),
+                  A.Defocus(radius=(1,3), p=0.2)]
+                  #A.RandomCropFromBorders(p=0.2),
+                  #A.Resize(1024,1024,p=1),
+                  #A.Affine(p=0.25),
+                  #A.CLAHE(clip_limit=16.0, tile_grid_size=(16, 16),p=0.3),
+                  #A.Sharpen(p=0.25)]
             self.transform = A.Compose(T, bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
 
             LOGGER.info(prefix + ', '.join(f'{x}'.replace('always_apply=False, ', '') for x in T if x.p))
