@@ -17,7 +17,7 @@ from multiprocessing.pool import Pool, ThreadPool
 from pathlib import Path
 from threading import Thread
 from urllib.parse import urlparse
-
+import tifffile as tifi
 import numpy as np
 import psutil
 import torch
@@ -115,6 +115,7 @@ def create_dataloader(path,
                       image_weights=False,
                       quad=False,
                       prefix='',
+                      tif_mode=False,
                       shuffle=False,
                       seed=0):
     if rect and shuffle:
@@ -133,7 +134,8 @@ def create_dataloader(path,
             stride=int(stride),
             pad=pad,
             image_weights=image_weights,
-            prefix=prefix)
+            prefix=prefix,
+            tif_mode=tif_mode)
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
@@ -449,7 +451,8 @@ class LoadImagesAndLabels(Dataset):
                  stride=32,
                  pad=0.0,
                  min_items=0,
-                 prefix=''):
+                 prefix='',
+                 tif_mode=False)):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -459,6 +462,7 @@ class LoadImagesAndLabels(Dataset):
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
+        self.tif_mode = tif_mode
         self.albumentations = Albumentations(size=img_size) if augment else None
 
         try:
@@ -732,7 +736,14 @@ class LoadImagesAndLabels(Dataset):
             if fn.exists():  # load npy
                 im = np.load(fn)
             else:  # read image
-                im = cv2.imread(f)  # BGR
+                if self.tif_mode:
+                    im = cv2.imread(f, cv2.IMREAD_UNCHANGED)  # BGR
+                    im = np.expand_dims(im,axis=2)
+                    im = np.concatenate((im,im,im),axis=2)
+                    im = im.astype(np.float32)
+                    im = (im /256) + 128
+                else:
+                    im = cv2.imread(f)
                 assert im is not None, f'Image Not Found {f}'
             h0, w0 = im.shape[:2]  # orig hw
             r = self.img_size / max(h0, w0)  # ratio
