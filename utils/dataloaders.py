@@ -306,7 +306,14 @@ class LoadImages:
         else:
             # Read image
             self.count += 1
-            im0 = cv2.imread(path)  # BGR
+            if self.tif_mode:
+                im0 = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR
+                im0 = np.expand_dims(im0,axis=2)
+                im0 = np.concatenate((im0,im0,im0),axis=2)
+                im0 = im0.astype(np.float32)
+                im0 = (im0 /256) + 128
+            else:
+                im0 = cv2.imread(path)  # BGR
             assert im0 is not None, f'Image Not Found {path}'
             s = f'image {self.count}/{self.nf} {path}: '
 
