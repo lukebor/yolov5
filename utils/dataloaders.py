@@ -268,6 +268,7 @@ class LoadImages:
         self.auto = auto
         self.transforms = transforms  # optional
         self.vid_stride = vid_stride  # video frame-rate stride
+        self.tif_mode = tif_mode
         if any(videos):
             self._new_video(videos[0])  # new video
         else:
